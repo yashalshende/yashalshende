@@ -56,6 +56,9 @@ function generateSvg(imagePath, isDark) {
     let stepX = imgData.width / targetW;
     let stepY = imgData.height / targetH;
     
+    // True Floyd-Steinberg Dithering
+    // First, convert the image to a grayscale luma array
+    let lumaMap = new Float32Array(targetW * targetH);
     for(let y=0; y<targetH; y++) {
         for(let x=0; x<targetW; x++) {
             let srcX = Math.floor(x * stepX);
@@ -64,15 +67,31 @@ function generateSvg(imagePath, isDark) {
             let r = imgData.data[idx];
             let g = imgData.data[idx+1];
             let b = imgData.data[idx+2];
-            let a = imgData.data[idx+3];
             
             // Grayscale
             let luma = (r*0.3 + g*0.59 + b*0.11);
             // Apply contrast
             luma = (luma - 128) * 1.3 + 128;
+            lumaMap[y * targetW + x] = luma;
+        }
+    }
+    
+    // Apply Floyd-Steinberg
+    for(let y=0; y<targetH; y++) {
+        for(let x=0; x<targetW; x++) {
+            let oldPixel = lumaMap[y * targetW + x];
+            let newPixel = oldPixel < 128 ? 0 : 255;
+            lumaMap[y * targetW + x] = newPixel;
+            let quantError = oldPixel - newPixel;
             
-            let threshold = Math.random() * 255;
-            let lit = isDark ? (luma > threshold) : (luma < threshold);
+            if(x + 1 < targetW) lumaMap[y * targetW + x + 1] += quantError * 7 / 16;
+            if(y + 1 < targetH) {
+                if(x - 1 >= 0) lumaMap[(y + 1) * targetW + x - 1] += quantError * 3 / 16;
+                lumaMap[(y + 1) * targetW + x] += quantError * 5 / 16;
+                if(x + 1 < targetW) lumaMap[(y + 1) * targetW + x + 1] += quantError * 1 / 16;
+            }
+            
+            let lit = isDark ? (newPixel === 255) : (newPixel === 0);
             
             // Only add if inside a rough ellipse to drop the background
             let dx = x - 150;
@@ -80,8 +99,9 @@ function generateSvg(imagePath, isDark) {
             let isInside = Math.sqrt((dx*dx)/(140*140) + (dy*dy)/(160*160)) < 1.0;
             
             if(lit && isInside) {
-                let px = x * 1.5 + 40 + (Math.random()-0.5);
-                let py = y * 1.5 + 80 + (Math.random()-0.5);
+                // Add slight sub-pixel noise to prevent blocky SMIL morphs
+                let px = x * 1.5 + 40 + (Math.random()-0.5)*0.5;
+                let py = y * 1.5 + 80 + (Math.random()-0.5)*0.5;
                 portrait.push({x: px, y: py});
             }
         }
@@ -132,7 +152,7 @@ function generateSvg(imagePath, isDark) {
     let cx = 600, cy = 80;
     const rows = [
         ["Subject", "Yashal Sharadrao Shende"],
-        ["Role", "Full-Stack Developer"],
+        ["Role", "AI Engineer"],
         ["Origin", "India"],
         ["Status", "Building + Learning + Shipping"],
         ["ToolChain", "VS Code, Git, Docker, Node.js"],
