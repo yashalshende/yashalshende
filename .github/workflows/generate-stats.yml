@@ -1,0 +1,50 @@
+name: Generate Stats SVGs
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Clone github-readme-stats
+        run: git clone https://github.com/anuraghazra/github-readme-stats.git stats-server
+
+      - name: Install and Start Server
+        env:
+          PAT_1: ${{ secrets.PAT_1 }}
+        run: |
+          cd stats-server
+          npm ci
+          npm start &
+          sleep 10 # Wait for server to start
+
+      - name: Generate SVGs
+        run: |
+          mkdir -p generated
+          curl "http://localhost:9000/api?username=yashalshende&show_icons=true&count_private=true&include_all_commits=true&hide_rank=true&hide_border=true&title_color=22D3EE&icon_color=A78BFA&text_color=94A3B8&bg_color=0A101F&card_width=500" -o generated/stats.svg
+          curl "http://localhost:9000/api/top-langs/?username=yashalshende&layout=compact&langs_count=8&hide_border=true&title_color=22D3EE&text_color=94A3B8&bg_color=0A101F&card_width=500" -o generated/langs.svg
+
+      - name: Push SVGs to output branch
+        run: |
+          cd generated
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Generate Stats SVGs"
+          git push --force https://${{ secrets.PAT_1 }}@github.com/yashalshende/yashalshende.git HEAD:stats-output
