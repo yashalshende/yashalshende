@@ -1,8 +1,12 @@
-# Hello there! 👋
 <!-- Banner -->
 <div align="center">
-  <img alt="Yashal Shende" src="https://avatars.githubusercontent.com/u/112271674?v=4" width="150" style="border-radius:50%">
-  <h1>Hi, I'm Yashal Sharadrao Shende 👋</h1>
+<picture>
+ <source media="(prefers-color-scheme: dark)"
+ srcset="https://raw.githubusercontent.com/yashalshende/yashalshende/main/dark.svg">
+ <source media="(prefers-color-scheme: light)"
+ srcset="https://raw.githubusercontent.com/yashalshende/yashalshende/main/light.svg">
+ <img alt="Yashal Shende" src="https://raw.githubusercontent.com/yashalshende/yashalshende/main/light.svg">
+</picture>
 </div>
 
 <br/>
