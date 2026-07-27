@@ -193,5 +193,5 @@ function generateSvg(imagePath, isDark) {
     console.log("Generated " + out);
 }
 
-generateSvg('avatar.png', true);
-generateSvg('avatar.png', false);
+generateSvg('avatar.jpg', true);
+generateSvg('avatar.jpg', false);
