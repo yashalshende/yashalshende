@@ -70,8 +70,15 @@ function generateSvg(imagePath, isDark) {
             
             // Grayscale
             let luma = (r*0.3 + g*0.59 + b*0.11);
-            // Apply contrast
-            luma = (luma - 128) * 1.3 + 128;
+            
+            // Drop pure white/light backgrounds
+            if (r > 230 && g > 230 && b > 230) {
+                luma = isDark ? 0 : 255;
+            } else {
+                // Apply contrast
+                luma = (luma - 128) * 1.3 + 128;
+            }
+            
             lumaMap[y * targetW + x] = luma;
         }
     }
@@ -178,12 +185,25 @@ function generateSvg(imagePath, isDark) {
     svg += `    <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0; 0.2; 0.3; 0.9; 1" dur="14.2s" repeatCount="indefinite" />\n`;
     svg += `  </path>\n`;
 
+    // Use <g> and animateTransform for much better cross-browser performance and reliability
     for(let i=0; i<nTravellers; i++) {
         let p0 = travellers[i], p1 = l1[i], p2 = l2[i], p3 = l3[i];
-        let dVals = [p0,p0,p1,p1,p2,p2,p3,p3,p0].map(p => `M${p.x.toFixed(1)},${p.y.toFixed(1)} h1.5 v1.5 h-1.5 Z`).join(";");
-        svg += `  <path d="M${p0.x.toFixed(1)},${p0.y.toFixed(1)} h1.5 v1.5 h-1.5 Z" fill="${dotsColor}" shape-rendering="crispEdges">\n`;
-        svg += `    <animate attributeName="d" values="${dVals}" keyTimes="0; 0.2; 0.3; 0.45; 0.55; 0.7; 0.8; 0.9; 1" dur="14.2s" repeatCount="indefinite" />\n`;
-        svg += `  </path>\n`;
+        let transVals = [
+            `${p0.x.toFixed(1)},${p0.y.toFixed(1)}`,
+            `${p0.x.toFixed(1)},${p0.y.toFixed(1)}`,
+            `${p1.x.toFixed(1)},${p1.y.toFixed(1)}`,
+            `${p1.x.toFixed(1)},${p1.y.toFixed(1)}`,
+            `${p2.x.toFixed(1)},${p2.y.toFixed(1)}`,
+            `${p2.x.toFixed(1)},${p2.y.toFixed(1)}`,
+            `${p3.x.toFixed(1)},${p3.y.toFixed(1)}`,
+            `${p3.x.toFixed(1)},${p3.y.toFixed(1)}`,
+            `${p0.x.toFixed(1)},${p0.y.toFixed(1)}`
+        ].join("; ");
+        
+        svg += `  <g>\n`;
+        svg += `    <animateTransform attributeName="transform" type="translate" values="${transVals}" keyTimes="0; 0.2; 0.3; 0.45; 0.55; 0.7; 0.8; 0.9; 1" dur="14.2s" repeatCount="indefinite" />\n`;
+        svg += `    <path d="M0,0 h1.5 v1.5 h-1.5 Z" fill="${dotsColor}" shape-rendering="crispEdges" />\n`;
+        svg += `  </g>\n`;
     }
     
     svg += `</svg>`;
